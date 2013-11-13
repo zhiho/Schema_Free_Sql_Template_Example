@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.SqlParameterValue;
 
 /**
  * Schema Free Sql Template
@@ -46,17 +45,6 @@ public interface SqlOperations
 	List<Map<String, Object>> select(String table,String[] fields,String where);
 	
 	/**
-	 * SELECT field1,field2.. FROM table WHERE key1 = 'value1' AND key2 = 'value2' ..;
-	 * 
-	 * @param table
-	 * @param fields
-	 * @param where 
-	 * @return affert rows count
-	 */
-	List<Map<String, Object>> select(String table,String[] fields,Map<String,Object> where);
-	
-	
-	/**
 	 * SELECT field1,field2.. FROM table WHERE where ORDER BY orderBy LIMIT start,limit;
 	 * 
 	 * @param table
@@ -70,6 +58,27 @@ public interface SqlOperations
 	List<Map<String, Object>> select(String table,String[] fields,String where,String orderBy,int start,int limit);
 	
 	/**
+	 * SELECT field1,field2.. FROM table WHERE where;
+	 * <br>
+	 * @param table
+	 * @param fields
+	 * @param where 
+	 * @return a map as a row OR null 
+	 */
+	Map<String, Object> selectOne(String table,String[] fields,String where);
+	
+	
+	/**
+	 * SELECT field1,field2.. FROM table WHERE key1 = 'value1' AND key2 = 'value2' ..;
+	 * 
+	 * @param table
+	 * @param fields
+	 * @param where 
+	 * @return affert rows count
+	 */
+	List<Map<String, Object>> select(String table,String[] fields,Map<String,Object> where);
+	
+	/**
 	 * SELECT field1,field2.. FROM table WHERE key1 = 'value1' AND key2 = 'value2'.. ORDER BY orderBy LIMIT start,limit;
 	 * 
 	 * @param table
@@ -81,6 +90,16 @@ public interface SqlOperations
 	 * @return
 	 */
 	List<Map<String, Object>> select(String table,String[] fields,Map<String,Object> where,String orderBy,int start,int limit);
+	
+	/**
+	 * SELECT field1,field2.. FROM table WHERE key1 = 'value1' AND key2 = 'value2' ..;
+	 * 
+	 * @param table
+	 * @param fields
+	 * @param where 
+	 * @return a map as a row OR null
+	 */
+	Map<String, Object> selectOne(String table,String[] fields,Map<String,Object> where);
 	
 	
 	/**
@@ -181,6 +200,44 @@ public interface SqlOperations
 	 * @see #queryForList(String)
 	 */
 	List<Map<String, Object>> query(String sql, Object... args) throws DataAccessException;
+
+	/**
+	 * Execute a query for a result Map, given static SQL.
+	 * <p>Uses a JDBC Statement, not a PreparedStatement. If you want to
+	 * execute a static query with a PreparedStatement, use the overloaded
+	 * {@link #queryForMap(String, Object...)} method with {@code null}
+	 * as argument array.
+	 * <p>The query is expected to be a single row query; the result row will be
+	 * mapped to a Map (one entry for each column, using the column name as the key).
+	 * @param sql SQL query to execute
+	 * @return the result Map (one entry for each column, using the
+	 * column name as the key) OR null
+	 * @throws DataAccessException if there is any problem executing the query
+	 * @see #queryForMap(String, Object[])
+	 * @see ColumnMapRowMapper
+	 */
+	Map<String, Object> queryOne(String sql) throws DataAccessException;
+	
+	/**
+	 * Query given SQL to create a prepared statement from SQL and a
+	 * list of arguments to bind to the query, expecting a result Map.
+	 * The queryForMap() methods defined by this interface are appropriate
+	 * when you don't have a domain model. Otherwise, consider using
+	 * one of the queryForObject() methods.
+	 * <p>The query is expected to be a single row query; the result row will be
+	 * mapped to a Map (one entry for each column, using the column name as the key).
+	 * @param sql SQL query to execute
+	 * @param args arguments to bind to the query
+	 * (leaving it to the PreparedStatement to guess the corresponding SQL type);
+	 * may also contain {@link SqlParameterValue} objects which indicate not
+	 * only the argument value but also the SQL type and optionally the scale
+	 * @return the result Map (one entry for each column, using the
+	 * column name as the key) OR null
+	 * @throws DataAccessException if the query fails
+	 * @see #queryForMap(String)
+	 * @see ColumnMapRowMapper
+	 */
+	Map<String, Object> queryOne(String sql, Object... args) throws DataAccessException;
 
 	/**
 	 * Issue a single SQL update operation (such as an insert, update or delete statement).

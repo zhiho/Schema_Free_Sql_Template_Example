@@ -19,18 +19,18 @@ public class SecurityService {
 	private SqlTemplate template;
 	
 	//Jusy For share the JDBC Connection, not open Transaction in fact;
-	@Transactional(propagation=Propagation.SUPPORTS)
+	//@Transactional(propagation=Propagation.SUPPORTS)
 	public boolean login(String username,String password) {
 		
 		//密码验证
 		Map<String,Object> where = new HashMap<String,Object>(1);
 		where.put("username", username);
 		
-		List<Map<String, Object>> rows = template.select("users", new String[]{"password"}, where);
+		Map<String, Object> row = template.selectOne("users", new String[]{"password"}, where);
 		
-		String pwd = rows.isEmpty()?null:(String) rows.get(0).get("password");
+		String pwd = (row == null) ? null : (String)row.get("password");
 		
-		if(! pwd.equals(password)) {
+		if(pwd == null || ! pwd.equals(password)) {
 			return false;
 		}
 		
@@ -45,9 +45,7 @@ public class SecurityService {
 	
 	public Map<String, Object> getUseinfo(String username) {
 		
-		List<Map<String, Object>> rows = template.select("users", null, "username='"+username +"'");
-		
-		return rows.get(0);
+		return template.selectOne("users", null, "username='"+username +"'");
 	}
 
 }

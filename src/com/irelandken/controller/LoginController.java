@@ -22,10 +22,11 @@ public class LoginController
 	{
 		if(securityService.login(username, password)) {
 			
-			
 			Map<String, Object> user = securityService.getUseinfo(username);
 			
-			model.put("user", user);
+			if(user != null) {
+				model.put("user", user);
+			}
 			
 			return "/home.jsp";
 		}

@@ -165,36 +165,7 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 		
 		return super.queryForList(sql);
 	}
-
-	@Override
-	public List<Map<String, Object>> select(String table, String[] fields, Map<String, Object> where)
-	{
-		//SELECT field1,field2.. FROM table WHERE key1 = ? AND key2 = ? ..;
-
-		String sql = null;
-		if(isEmpty(fields)) {
-			sql  = "SELECT * FROM " + table;
-		} else {
-			sql  = "SELECT " + link(",",fields) + " FROM " + table;
-		}
-		
-		List<Object> args = null;
-		
-		if(! isEmpty(where)) {
-			args = new ArrayList<Object>(where.size());
-			List<String> condictions = new ArrayList<String>(where.size());
-			
-			for(Entry<String, Object> entry : where.entrySet()) {
-				condictions.add(entry.getKey() + " = ? ");
-				args.add(entry.getValue());
-			}
-			
-			sql += " WHERE " + link(" AND ",condictions);
-		}
-		
-		return super.queryForList(sql, args.toArray());
-	}
-
+	
 	@Override
 	public List<Map<String, Object>> select(String table, String[] fields, String where, String orderBy, int start, int limit)
 	{
@@ -220,6 +191,45 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 		}
 		
 		return super.queryForList(sql);
+	}
+	
+	@Override
+	public Map<String, Object> selectOne(String table, String[] fields, String where)
+	{
+		List<Map<String, Object>> rows = this.select(table, fields, where, null, 0, 1);
+		
+		return rows.isEmpty() ? null : rows.get(0);
+	}
+	
+
+	@Override
+	public List<Map<String, Object>> select(String table, String[] fields, Map<String, Object> where)
+	{
+		//SELECT field1,field2.. FROM table WHERE key1 = ? AND key2 = ? ..;
+
+		String sql = null;
+		if(isEmpty(fields)) {
+			sql  = "SELECT * FROM " + table;
+		} else {
+			sql  = "SELECT " + link(",",fields) + " FROM " + table;
+		}
+		
+		List<Object> args = null;
+		
+		//WHERE
+		if(! isEmpty(where)) {
+			args = new ArrayList<Object>(where.size());
+			List<String> condictions = new ArrayList<String>(where.size());
+			
+			for(Entry<String, Object> entry : where.entrySet()) {
+				condictions.add(entry.getKey() + " = ? ");
+				args.add(entry.getValue());
+			}
+			
+			sql += " WHERE " + link(" AND ",condictions);
+		}
+		
+		return super.queryForList(sql, args.toArray());
 	}
 
 	@Override
@@ -259,6 +269,15 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 		
 		return super.queryForList(sql, args.toArray());
 	}
+
+	@Override
+	public Map<String, Object> selectOne(String table, String[] fields, Map<String, Object> where)
+	{
+		List<Map<String, Object>> rows = this.select(table, fields, where, null, 0, 1);
+		
+		return rows.isEmpty() ? null : rows.get(0);
+	}
+	
 
 	@Override
 	public int update(String table, Map<String, Object> data, String where)
@@ -416,6 +435,22 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 	public List<Map<String, Object>> query(String sql, Object... args) throws DataAccessException
 	{
 		return super.queryForList(sql, args);
+	}
+	
+	@Override
+	public Map<String, Object> queryOne(String sql) throws DataAccessException
+	{
+		List<Map<String, Object>> rows = super.queryForList(sql);
+		
+		return rows.isEmpty() ? null : rows.get(0);
+	}
+
+	@Override
+	public Map<String, Object> queryOne(String sql, Object... args) throws DataAccessException
+	{
+		List<Map<String, Object>> rows = super.queryForList(sql, args);
+		
+		return rows.isEmpty() ? null : rows.get(0);
 	}
 
 	@Override
