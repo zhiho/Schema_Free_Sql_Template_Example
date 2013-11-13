@@ -1,0 +1,9 @@
+19:09:49,061 DEBUG DefaultListableBeanFactory:246 - Returning cached instance of singleton bean 'transactionManager'
+19:09:57,272 DEBUG SqlTemplate:637 - Executing prepared SQL query
+19:09:57,279 DEBUG SqlTemplate:572 - Executing prepared SQL statement [SELECT password FROM users WHERE username = ? ]
+19:09:57,299 DEBUG DataSourceUtils:110 - Fetching JDBC Connection from DataSource
+19:09:57,318 DEBUG DataSourceUtils:114 - Registering transaction synchronization for JDBC Connection
+19:10:07,232 DEBUG SqlTemplate:817 - Executing prepared SQL update
+19:10:07,246 DEBUG SqlTemplate:572 - Executing prepared SQL statement [UPDATE users SET last_access_time = ?  WHERE username = ? ]
+19:10:07,265 DEBUG SqlTemplate:826 - SQL update affected 1 rows
+19:10:52,898 DEBUG DataSourceUtils:327 - Returning JDBC Connection to DataSource

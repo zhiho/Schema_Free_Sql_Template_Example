@@ -1,0 +1,9 @@
+19:16:56,458 DEBUG SqlTemplate:637 - Executing prepared SQL query
+19:16:56,459 DEBUG SqlTemplate:572 - Executing prepared SQL statement [SELECT password FROM users WHERE username = ? ]
+19:16:56,470 DEBUG DataSourceUtils:110 - Fetching JDBC Connection from DataSource
+19:16:56,510 DEBUG DataSourceUtils:327 - Returning JDBC Connection to DataSource
+19:16:56,512 DEBUG SqlTemplate:817 - Executing prepared SQL update
+19:16:56,514 DEBUG SqlTemplate:572 - Executing prepared SQL statement [UPDATE users SET last_access_time = ?  WHERE username = ? ]
+19:16:56,514 DEBUG DataSourceUtils:110 - Fetching JDBC Connection from DataSource
+19:16:56,521 DEBUG SqlTemplate:826 - SQL update affected 1 rows
+19:16:56,522 DEBUG DataSourceUtils:327 - Returning JDBC Connection to DataSource
