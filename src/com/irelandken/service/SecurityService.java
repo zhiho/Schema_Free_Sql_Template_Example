@@ -18,20 +18,15 @@ public class SecurityService {
 	@Autowired
 	private SqlTemplate template;
 	
-	private static Map<String,Object> map(String key,Object value) {
-		Map<String,Object> map = new HashMap<String,Object>(1);
-		map.put(key, value);
-		return map;
-	}
-	
 	//Jusy For share the JDBC Connection, not open Transaction in fact;
 	@Transactional(propagation=Propagation.SUPPORTS)
 	public boolean login(String username,String password) {
 		
+		//密码验证
 		Map<String,Object> where = new HashMap<String,Object>(1);
 		where.put("username", username);
 		
-		List<Map<String, Object>> rows = template.select("users", new String[]{"password"}, map("username", username));
+		List<Map<String, Object>> rows = template.select("users", new String[]{"password"}, where);
 		
 		String pwd = rows.isEmpty()?null:(String) rows.get(0).get("password");
 		
