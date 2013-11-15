@@ -24,7 +24,8 @@ import org.springframework.util.Assert;
  * Schema Free Sql Template
  * 
  * @author irelandKen
- * @since 2013-11-12
+ * @since 2013-11-15
+ * @version 0.2
  * TODO: 重构 where_string
  * TODO: 重构SQL拼接工具
  */
@@ -118,6 +119,8 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 	@Override
 	public Number insert(String table, final Map<String, Object> data)
 	{
+		Assert.notNull(table);
+		Assert.notEmpty(data);
 		
 		final String sql = "INSERT INTO " + table + " (" + link(",",data.keySet()) + ") VALUES (" + placeholders(data.size()) + ")";
 
@@ -142,6 +145,9 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 	@Override
 	public boolean insert2(String table, Map<String, Object> data)
 	{
+		Assert.notNull(table);
+		Assert.notEmpty(data);
+		
 		String sql = "INSERT INTO " + table + " (" + link(",",data.keySet()) + ") VALUES (" + placeholders(data.size()) + ")";
 		
 		return super.update(sql, data.values().toArray()) >= 1;
@@ -152,24 +158,15 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 	{
 		//SELECT field1,field2.. FROM table WHERE where; 
 		
-		String sql = null;
-		if(isEmpty(fields)) {
-			sql  = "SELECT * FROM " + table;
-		} else {
-			sql  = "SELECT " + link(",",fields) + " FROM " + table;
-		}
-		
-		if(where != null) {
-			sql += " WHERE " + where;
-		}
-		
-		return super.queryForList(sql);
+		return select(table, fields, where, null, null, null);
 	}
 	
 	@Override
-	public List<Map<String, Object>> select(String table, String[] fields, String where, String orderBy, int start, int limit)
+	public List<Map<String, Object>> select(String table, String[] fields, String where, String orderBy, Integer start, Integer limit)
 	{
 		//SELECT field1,field2.. FROM table WHERE where ORDER BY orderBy LIMIT start,limit;
+		
+		Assert.notNull(table);
 		
 		String sql = null;
 		if(isEmpty(fields)) {
@@ -186,7 +183,7 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 			sql += " ORDER BY " + orderBy;
 		}
 		
-		if(start >=0 && limit > 0) {
+		if(start != null && limit != null && start >=0 && limit > 0) {
 			sql += " LIMIT " + start + "," + limit;
 		}
 		
@@ -196,7 +193,7 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 	@Override
 	public Map<String, Object> selectOne(String table, String[] fields, String where)
 	{
-		List<Map<String, Object>> rows = this.select(table, fields, where, null, 0, 1);
+		List<Map<String, Object>> rows = select(table, fields, where, null, 0, 1);
 		
 		return rows.isEmpty() ? null : rows.get(0);
 	}
@@ -207,36 +204,16 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 	{
 		//SELECT field1,field2.. FROM table WHERE key1 = ? AND key2 = ? ..;
 
-		String sql = null;
-		if(isEmpty(fields)) {
-			sql  = "SELECT * FROM " + table;
-		} else {
-			sql  = "SELECT " + link(",",fields) + " FROM " + table;
-		}
-		
-		List<Object> args = null;
-		
-		//WHERE
-		if(! isEmpty(where)) {
-			args = new ArrayList<Object>(where.size());
-			List<String> condictions = new ArrayList<String>(where.size());
-			
-			for(Entry<String, Object> entry : where.entrySet()) {
-				condictions.add(entry.getKey() + " = ? ");
-				args.add(entry.getValue());
-			}
-			
-			sql += " WHERE " + link(" AND ",condictions);
-		}
-		
-		return super.queryForList(sql, args.toArray());
+		return select(table, fields, where, null, null, null);
 	}
 
 	@Override
-	public List<Map<String, Object>> select(String table, String[] fields, Map<String, Object> where, String orderBy, int start, int limit)
+	public List<Map<String, Object>> select(String table, String[] fields, Map<String, Object> where, String orderBy, Integer start, Integer limit)
 	{
 		//SELECT field1,field2.. FROM table WHERE key1 = ? AND key2 = ?.. ORDER BY orderBy LIMIT start,limit;
 
+		Assert.notNull(table);
+		
 		String sql = null;
 		if(isEmpty(fields)) {
 			sql  = "SELECT * FROM " + table;
@@ -263,7 +240,7 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 			sql += " ORDER BY " + orderBy;
 		}
 		
-		if(start >=0 && limit > 0) {
+		if(start != null && limit != null && start >=0 && limit > 0) {
 			sql += " LIMIT " + start + "," + limit;
 		}
 		
@@ -273,7 +250,7 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 	@Override
 	public Map<String, Object> selectOne(String table, String[] fields, Map<String, Object> where)
 	{
-		List<Map<String, Object>> rows = this.select(table, fields, where, null, 0, 1);
+		List<Map<String, Object>> rows = select(table, fields, where, null, 0, 1);
 		
 		return rows.isEmpty() ? null : rows.get(0);
 	}
@@ -284,6 +261,7 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 	{
 		//UPDATE table SET field1 = ?, field2 = ?.. WHERE where; 
 		
+		Assert.notNull(table);
 		Assert.notEmpty(data);
 
 		List<String> fieldStrs = new ArrayList<String>(data.size());
@@ -308,6 +286,7 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 	{
 		//UPDATE table SET field1 = ?, field2 = ?.. WHERE key1 = ? AND key2 = ?..; ; 
 		
+		Assert.notNull(table);
 		Assert.notEmpty(data);
 		
 		int argCnt = data.size();
@@ -346,6 +325,8 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 	{
 		//DELETE FROM table WHERE where;
 		
+		Assert.notNull(table);
+		
 		String sql = "DELETE FROM " + table;
 		
 		if(where != null) {
@@ -359,6 +340,8 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 	public int delete(String table, Map<String, Object> where)
 	{
 		//DELETE FROM table WHERE key1 = ? AND key2 = ? ..;
+		
+		Assert.notNull(table);
 		
 		String sql = "DELETE FROM " + table;
 		
@@ -385,6 +368,8 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 	{
 		//SELECT COUNT(*) FROM table WHERE where;
 		
+		Assert.notNull(table);
+		
 		String sql = "SELECT COUNT(*) FROM " + table;
 		
 		if(where != null) {
@@ -398,6 +383,8 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 	public int count(String table, Map<String, Object> where)
 	{
 		//SELECT COUNT(*) FROM table WHERE key1 = ? AND key2 = ? ..;
+		
+		Assert.notNull(table);
 		
 		String sql = "SELECT COUNT(*) FROM " + table;
 		

@@ -9,8 +9,8 @@ import org.springframework.dao.DataAccessException;
  * Schema Free Sql Template
  *  
  * @author irelandKen
- * @since 2013-11-12
- * TODO: queryOne? selectOne ?
+ * @since 2013-11-15
+ * @version 0.2
  */
 
 public interface SqlOperations
@@ -55,7 +55,7 @@ public interface SqlOperations
 	 * @param limit
 	 * @return
 	 */
-	List<Map<String, Object>> select(String table,String[] fields,String where,String orderBy,int start,int limit);
+	List<Map<String, Object>> select(String table,String[] fields,String where,String orderBy,Integer start,Integer limit);
 	
 	/**
 	 * SELECT field1,field2.. FROM table WHERE where;
@@ -89,7 +89,7 @@ public interface SqlOperations
 	 * @param limit
 	 * @return
 	 */
-	List<Map<String, Object>> select(String table,String[] fields,Map<String,Object> where,String orderBy,int start,int limit);
+	List<Map<String, Object>> select(String table,String[] fields,Map<String,Object> where,String orderBy,Integer start,Integer limit);
 	
 	/**
 	 * SELECT field1,field2.. FROM table WHERE key1 = 'value1' AND key2 = 'value2' ..;
