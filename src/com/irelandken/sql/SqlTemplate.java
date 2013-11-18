@@ -21,13 +21,15 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.util.Assert;
 
 /**
- * Schema Free Sql Template
+ * Data Oriented Sql Template
  * 
  * @author irelandKen
- * @since 2013-11-15
- * @version 0.2
- * TODO: 重构 where_string
+ * @since 2013-11-17
+ * @version 0.2.1
+ * @see https://github.com/irelandKen/Schema_Free_Sql_Template
+ * 
  * TODO: 重构SQL拼接工具
+ * TODO: String sql => StringBuilder sql
  */
 
 public class SqlTemplate extends JdbcTemplate implements SqlOperations 
@@ -114,6 +116,69 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 		builder.append("?");
 		
 		return builder.toString();
+	}
+	
+	/**
+	 * sql segment with Prepared args ,used for prepared statement
+	 * @author irelandKen
+	 */
+	private static class PreparedSqlSegment {
+		
+		String segment;
+		Object[] args;
+		
+		public PreparedSqlSegment(String segment, Object[] args){
+			this.segment = segment;
+			this.args    = args;
+		}
+	}
+	
+	/**
+	 * where sql segment with Prepared args ,used for prepared statement
+	 * @param where not null
+	 * @return
+	 */
+	private static PreparedSqlSegment preparedWhereString(Map<String, Object> where) {
+		String[] condictions = new String[where.size()];
+		Object[] args = new Object[where.size()];
+		int index = 0;
+		
+		for(Entry<String, Object> entry : where.entrySet()) {
+			condictions[index] = entry.getKey() + " = ? ";
+			args[index] = entry.getValue();
+			index++;
+		}
+		
+		String where_segment = link(" AND ",condictions);
+		
+		return new PreparedSqlSegment(where_segment, args);
+	}
+	
+	/**
+	 * update sql segment with Prepared args ,used for prepared statement
+	 * @param data not null
+	 * @return
+	 */
+	private static PreparedSqlSegment preparedUpdateString(Map<String, Object> data) {
+		String[] fieldStrs = new String[data.size()];
+		Object[] args = new Object[data.size()];
+		int index = 0;
+		
+		for(Entry<String, Object> entry : data.entrySet()) {
+			fieldStrs[index] = entry.getKey() + " = ? ";
+			args[index] = entry.getValue();
+			index++;
+		}
+
+		String update_segment = link(", ",fieldStrs);
+		
+		return new PreparedSqlSegment(update_segment, args);
+	}
+	
+	private static void addAll(Collection<Object> list , Object[] array) {
+		for (Object item : array){
+			list.add(item);
+		}
 	}
 	
 	@Override
@@ -221,19 +286,15 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 			sql  = "SELECT " + link(",",fields) + " FROM " + table;
 		}
 		
-		List<Object> args = null;
+		Object[] args = null;
 		
 		//WHERE
 		if(! isEmpty(where)) {
-			args = new ArrayList<Object>(where.size());
-			List<String> condictions = new ArrayList<String>(where.size());
+			PreparedSqlSegment whereSegment = preparedWhereString(where);
 			
-			for(Entry<String, Object> entry : where.entrySet()) {
-				condictions.add(entry.getKey() + " = ? ");
-				args.add(entry.getValue());
-			}
+			args = whereSegment.args;
 			
-			sql += " WHERE " + link(" AND ",condictions);
+			sql += " WHERE " + whereSegment.segment;
 		}
 		
 		if(orderBy != null) {
@@ -244,7 +305,7 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 			sql += " LIMIT " + start + "," + limit;
 		}
 		
-		return super.queryForList(sql, args.toArray());
+		return super.queryForList(sql, args);
 	}
 
 	@Override
@@ -264,21 +325,15 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 		Assert.notNull(table);
 		Assert.notEmpty(data);
 
-		List<String> fieldStrs = new ArrayList<String>(data.size());
-		List<Object> args      = new ArrayList<Object>(data.size());
-		
-		for(Entry<String, Object> entry : data.entrySet()) {
-			fieldStrs.add(entry.getKey() + " = ? ");
-			args.add(entry.getValue());
-		}
+		PreparedSqlSegment updateSegment = preparedUpdateString(data);
 
-		String sql = "UPDATE " + table + " SET " + link(", ",fieldStrs);
+		String sql = "UPDATE " + table + " SET " + updateSegment.segment;
 		
 		if(where != null) {
 			sql += " WHERE " + where;
 		}
 		
-		return super.update(sql, args.toArray());
+		return super.update(sql, updateSegment.args);
 	}
 
 	@Override
@@ -295,26 +350,20 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 		}
 
 		List<Object> args      = new ArrayList<Object>(argCnt);
-		List<String> fieldStrs = new ArrayList<String>(data.size());
 		
+		PreparedSqlSegment updateSegment = preparedUpdateString(data);
 		
-		for(Entry<String, Object> entry : data.entrySet()) {
-			fieldStrs.add(entry.getKey() + " = ? ");
-			args.add(entry.getValue());
-		}
+		addAll(args,updateSegment.args);
 
-		String sql = "UPDATE " + table + " SET " + link(", ",fieldStrs);
+		String sql = "UPDATE " + table + " SET " + updateSegment.segment;
 		
 		//WHERE
 		if(! isEmpty(where)) {
-			List<String> condictions = new ArrayList<String>(where.size());
+			PreparedSqlSegment whereSegment = preparedWhereString(where);
 			
-			for(Entry<String, Object> entry : where.entrySet()) {
-				condictions.add(entry.getKey() + " = ? ");
-				args.add(entry.getValue());
-			}
+			addAll(args,whereSegment.args);
 			
-			sql += " WHERE " + link(" AND ",condictions);
+			sql += " WHERE " + whereSegment.segment;
 		}
 		
 		return super.update(sql, args.toArray());
@@ -345,22 +394,18 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 		
 		String sql = "DELETE FROM " + table;
 		
-		List<Object> args = null;
+		Object[] args = null;
 		
 		//WHERE
 		if(! isEmpty(where)) {
-			args = new ArrayList<Object>(where.size());
-			List<String> condictions = new ArrayList<String>(where.size());
+			PreparedSqlSegment whereSegment = preparedWhereString(where);
 			
-			for(Entry<String, Object> entry : where.entrySet()) {
-				condictions.add(entry.getKey() + " = ? ");
-				args.add(entry.getValue());
-			}
+			args = whereSegment.args;
 			
-			sql += " WHERE " + link(" AND ",condictions);
+			sql += " WHERE " + whereSegment.segment;
 		}
 		
-		return super.update(sql,args.toArray());
+		return super.update(sql,args);
 	}
 
 	@Override
@@ -388,22 +433,18 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 		
 		String sql = "SELECT COUNT(*) FROM " + table;
 		
-		List<Object> args = null;
+		Object[] args = null;
 		
 		//WHERE
 		if(! isEmpty(where)) {
-			args = new ArrayList<Object>(where.size());
-			List<String> condictions = new ArrayList<String>(where.size());
+			PreparedSqlSegment whereSegment = preparedWhereString(where);
 			
-			for(Entry<String, Object> entry : where.entrySet()) {
-				condictions.add(entry.getKey() + " = ? ");
-				args.add(entry.getValue());
-			}
+			args = whereSegment.args;
 			
-			sql += " WHERE " + link(" AND ",condictions);
+			sql += " WHERE " + whereSegment.segment;
 		}
 
-		return super.queryForInt(sql,args.toArray());
+		return super.queryForInt(sql,args);
 	}
 	
 	
