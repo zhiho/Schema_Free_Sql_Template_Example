@@ -24,8 +24,8 @@ import org.springframework.util.Assert;
  * Data Oriented Sql Template
  * 
  * @author irelandKen
- * @since 2013-11-17
- * @version 0.2.1
+ * @since 2013-12-07
+ * @version 0.3.0
  * @see https://github.com/irelandKen/Schema_Free_Sql_Template
  * 
  * TODO: 重构SQL拼接工具
@@ -182,6 +182,46 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 	}
 	
 	@Override
+	public Number insert(final String sql)
+	{
+		KeyHolder keyHolder = new GeneratedKeyHolder();
+		super.update(
+		    new PreparedStatementCreator() {
+		        public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+		            PreparedStatement ps =
+		                connection.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
+		            
+		            return ps;
+		        }
+		    },
+		    keyHolder
+		);
+
+		return keyHolder.getKey();
+	}
+
+	@Override
+	public Number insert(final String sql, final Object... args)
+	{
+		KeyHolder keyHolder = new GeneratedKeyHolder();
+		super.update(
+		    new PreparedStatementCreator() {
+		        public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+		            PreparedStatement ps =
+		                connection.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
+		            
+		            (new ArgumentPreparedStatementSetter(args)).setValues(ps);
+		            
+		            return ps;
+		        }
+		    },
+		    keyHolder
+		);
+
+		return keyHolder.getKey();
+	}
+	
+	@Override
 	public Number insert(String table, final Map<String, Object> data)
 	{
 		Assert.notNull(table);
@@ -217,7 +257,44 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 		
 		return super.update(sql, data.values().toArray()) >= 1;
 	}
+	
+	@Override
+	public int insert2(String sql)
+	{
+		return queryUpdate(sql);
+	}
 
+	@Override
+	public int insert2(String sql, Object... args)
+	{
+		return queryUpdate(sql, args);
+	}
+
+
+	@Override
+	public List<Map<String, Object>> select(String sql) throws DataAccessException
+	{
+		return query(sql);
+	}
+
+	@Override
+	public List<Map<String, Object>> select(String sql, Object... args) throws DataAccessException
+	{
+		return query(sql, args);
+	}
+	
+	@Override
+	public Map<String, Object> selectOne(String sql) throws DataAccessException
+	{
+		return queryOne(sql);
+	}
+
+	@Override
+	public Map<String, Object> selectOne(String sql, Object... args) throws DataAccessException
+	{
+		return queryOne(sql, args);
+	}
+	
 	@Override
 	public List<Map<String, Object>> select(String table, String[] fields, String where)
 	{
@@ -369,6 +446,19 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 		return super.update(sql, args.toArray());
 	}
 
+
+	@Override
+	public int delete(String sql)
+	{
+		return queryUpdate(sql);
+	}
+
+	@Override
+	public int delete(String sql, Object... args)
+	{
+		return queryUpdate(sql, args);
+	}
+	
 	@Override
 	public int delete(String table, String where)
 	{
@@ -408,6 +498,18 @@ public class SqlTemplate extends JdbcTemplate implements SqlOperations
 		return super.update(sql,args);
 	}
 
+	@Override
+	public int count(String sql)
+	{
+		return super.queryForInt(sql);
+	}
+
+	@Override
+	public int count(String sql, Object... args)
+	{
+		return super.queryForInt(sql,args);
+	}
+	
 	@Override
 	public int count(String table, String where)
 	{
